@@ -12,17 +12,20 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import com.valyakinaleksey.amocrm.R;
-import com.valyakinaleksey.amocrm.domain.ServiceGenerator;
+import com.valyakinaleksey.amocrm.domain.Authentificator;
 import com.valyakinaleksey.amocrm.models.api.APIError;
-import com.valyakinaleksey.amocrm.models.api.AuthResponse;
-import com.valyakinaleksey.amocrm.models.api.Response;
+import com.valyakinaleksey.amocrm.models.events.AccountAuthEvent;
+import com.valyakinaleksey.amocrm.models.events.AccountChosenEvent;
+import com.valyakinaleksey.amocrm.models.events.ApiErrorEvent;
+import com.valyakinaleksey.amocrm.models.events.BaseAuthEvent;
 import com.valyakinaleksey.amocrm.util.ErrorUtils;
 import com.valyakinaleksey.amocrm.util.Logger;
 import com.valyakinaleksey.amocrm.util.Session;
 import com.valyakinaleksey.amocrm.util.ToastUtils;
 
-import retrofit2.Call;
-import retrofit2.Callback;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 
 /**
@@ -31,6 +34,9 @@ import retrofit2.Callback;
 public class LoginFragment extends Fragment {
     private EditText etLogin;
     private EditText etPassword;
+    private AccountsFragment accountsFragment;
+    private View btnLogin;
+    private View progressBar;
 
     public LoginFragment() {
     }
@@ -62,8 +68,8 @@ public class LoginFragment extends Fragment {
     }
 
     private void initLogin(final View view) {
-        final View btnLogin = view.findViewById(R.id.btn_auth);
-        final View progressBar = view.findViewById(R.id.progress_bar);
+        btnLogin = view.findViewById(R.id.btn_auth);
+        progressBar = view.findViewById(R.id.progress_bar);
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -77,49 +83,71 @@ public class LoginFragment extends Fragment {
                 String password = etPassword.getText().toString();
                 if (login.isEmpty() && password.isEmpty()) {
                     ToastUtils.showShortMessage("fill login and password", getContext());
+                    return;
                 }
-//                ServiceGenerator.AmoCrmApiInterface client = ServiceGenerator.getClient(GsonConverterFactory.create());
-                ServiceGenerator.AmoCrmApiInterface client = ServiceGenerator.createService(ServiceGenerator.AmoCrmApiInterface.class);
-                Call<Response<AuthResponse>> itemCall = client.apiLogin(login, password);
-                itemCall.enqueue(new Callback<Response<AuthResponse>>() {
-                    @Override
-                    public void onResponse(Call<Response<AuthResponse>> call, retrofit2.Response<Response<AuthResponse>> response) {
-                        Logger.d(response.toString());
-                        if (response.isSuccessful()) {
-                            Session.saveSession(response, getContext());
-                            ToastUtils.showShortMessage("Login successful", getContext());
-                            ((Navigator) getActivity()).navigateToFragment(new LeadsFragment());
-                        } else {
-                            APIError apiError = ErrorUtils.parseError(response);
-                            displayLoading(false);
-                            if (!TextUtils.isEmpty(apiError.error)) {
-                                ToastUtils.showShortMessage(apiError.error, getContext());
-                                switch (apiError.error_code) {
-                                    //и т д. здесь можно обрабатывать наши ошибки
-                                    case ErrorUtils.ERROR_AUTH_LOGIN_PASSWORD:
-                                        break;
-                                    case ErrorUtils.ERROR_AUTH_CAPTCHA:
-                                        break;
-                                }
-                                Logger.d(apiError.error);
-                                Logger.d(String.valueOf(apiError.error_code));
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<Response<AuthResponse>> call, Throwable t) {
-                        Logger.d(t.toString());
-                        ToastUtils.showShortMessage("Check your internet connection", getContext());
-                        displayLoading(false);
-                    }
-                });
-            }
-
-            private void displayLoading(boolean b) {
-                btnLogin.setEnabled(!b);
-                progressBar.setVisibility(b ? View.VISIBLE : View.INVISIBLE);
+                Authentificator.baseAuth(login, password);
             }
         });
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onApiErrorEvent(ApiErrorEvent apiErrorEvent) {
+        displayLoading(false);
+        APIError apiError = apiErrorEvent.apiError;
+        if (apiError != null && !TextUtils.isEmpty(apiError.error)) {
+            ToastUtils.showShortMessage(apiError.error, getContext());
+            switch (apiError.error_code) {
+                //и т д. здесь можно обрабатывать наши ошибки
+                case ErrorUtils.ERROR_AUTH_LOGIN_PASSWORD:
+                    break;
+                case ErrorUtils.ERROR_AUTH_CAPTCHA:
+                    break;
+            }
+            Logger.d(apiError.error);
+            Logger.d(String.valueOf(apiError.error_code));
+        }
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onBaseAuthEvent(BaseAuthEvent baseAuthEvent) {
+        displayLoading(false);
+        accountsFragment = new AccountsFragment();
+        accountsFragment.setAccountList(baseAuthEvent.accountList);
+        accountsFragment.show(getFragmentManager(), AccountsFragment.TAG);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAccountAuthEvent(AccountAuthEvent accountAuthEvent) {
+        displayLoading(false);
+        Session.saveSession(accountAuthEvent.response, getContext());
+        ToastUtils.showShortMessage("Login successful", getContext());
+        ((Navigator) getActivity()).navigateToFragment(new LeadsFragment());
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onAccountChosenEvent(AccountChosenEvent accountChosenEvent) {
+        if (accountsFragment != null && accountsFragment.isVisible()) {
+            accountsFragment.dismiss();
+        }
+        displayLoading(true);
+        Authentificator.accountAuth(accountChosenEvent.account, etLogin.getText().toString(), etPassword.getText().toString());
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        EventBus.getDefault().unregister(this);
+    }
+
+    private void displayLoading(boolean b) {
+        btnLogin.setEnabled(!b);
+        progressBar.setVisibility(b ? View.VISIBLE : View.INVISIBLE);
     }
 }

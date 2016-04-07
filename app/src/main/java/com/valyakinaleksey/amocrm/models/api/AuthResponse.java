@@ -6,7 +6,7 @@ import java.util.List;
 
 public class AuthResponse {
     @SerializedName("auth")
-    boolean auth;
+    public boolean auth;
     @SerializedName("accounts")
-    List<Account> accounts;
+    public List<Account> accounts;
 }

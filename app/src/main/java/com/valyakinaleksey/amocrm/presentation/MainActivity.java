@@ -19,7 +19,9 @@ public class MainActivity extends AppCompatActivity implements Navigator {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        navigateToFragment(!TextUtils.isEmpty(Session.SESSION_ID) ? new LeadsFragment() : new LoginFragment());
+        if (savedInstanceState == null) {
+            navigateToFragment(!TextUtils.isEmpty(Session.SESSION_ID) ? new LeadsFragment() : new LoginFragment());
+        }
     }
 
     public void navigateToFragment(Fragment fragment) {

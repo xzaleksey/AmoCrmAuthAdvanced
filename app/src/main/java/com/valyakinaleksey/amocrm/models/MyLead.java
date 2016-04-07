@@ -4,7 +4,7 @@ package com.valyakinaleksey.amocrm.models;
 public class MyLead {
     private final int id;
     private String name;
-    private int price;
+    private String price;
     private String status;
 
     public MyLead(int id) {
@@ -19,11 +19,11 @@ public class MyLead {
         this.name = name;
     }
 
-    public int getPrice() {
+    public String getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(String price) {
         this.price = price;
     }
 

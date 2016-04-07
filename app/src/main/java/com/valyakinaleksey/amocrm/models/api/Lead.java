@@ -8,7 +8,7 @@ public class Lead {
     @SerializedName("name")
     public String name;
     @SerializedName("price")
-    public int price;
+    public String price;
     @SerializedName("status_id")
     public int status_id;
 }

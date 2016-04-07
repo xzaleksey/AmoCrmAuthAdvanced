@@ -3,7 +3,7 @@ package com.valyakinaleksey.amocrm.util;
 import com.google.gson.reflect.TypeToken;
 import com.valyakinaleksey.amocrm.domain.ServiceGenerator;
 import com.valyakinaleksey.amocrm.models.api.APIError;
-import com.valyakinaleksey.amocrm.models.api.Response;
+import com.valyakinaleksey.amocrm.models.api.AmoResponse;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -14,7 +14,7 @@ import retrofit2.Converter;
 
 
 public class ErrorUtils {
-
+    public static final int ERROR_INTERNET_CONNECTION = -666;
     public static final int ERROR_AUTH_LOGIN_PASSWORD = 110;
     public static final int ERROR_AUTH_CAPTCHA = 111;
     public static final int ERROR_AUTH__USER_NOT_IN_ACCOUNT = 112;
@@ -28,18 +28,18 @@ public class ErrorUtils {
     public static final int ERROR_LEAD_UPDATE_PARAMETERS_MISSED = 217;
     public static final int ERROR_LEAD_ADD_LEAD_EMPTY = 240;
 
-    public static final Type ERROR_TYPE = new TypeToken<com.valyakinaleksey.amocrm.models.api.Response<APIError>>() {
+    public static final Type ERROR_TYPE = new TypeToken<AmoResponse<APIError>>() {
     }.getType();
 
     public static APIError parseError(retrofit2.Response response) {
-        Converter<ResponseBody, Response<APIError>> converter =
+        Converter<ResponseBody, AmoResponse<APIError>> converter =
                 ServiceGenerator.retrofit()
                         .responseBodyConverter(ERROR_TYPE, new Annotation[0]);
 
         APIError error;
 
         try {
-            com.valyakinaleksey.amocrm.models.api.Response<APIError> apiErrorResponse = converter.convert(response.errorBody());
+            AmoResponse<APIError> apiErrorResponse = converter.convert(response.errorBody());
             error = apiErrorResponse.response;
         } catch (IOException e) {
             Logger.d(e.toString());

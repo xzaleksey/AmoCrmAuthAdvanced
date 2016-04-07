@@ -17,4 +17,8 @@ public class Account {
     public String timezone;
     @SerializedName("leads_statuses")
     public List<LeadStatus> leadStatuses;
+    @SerializedName("base_domain")
+    public String base_domain;
+    @SerializedName("account_domain")
+    public String account_domain;
 }

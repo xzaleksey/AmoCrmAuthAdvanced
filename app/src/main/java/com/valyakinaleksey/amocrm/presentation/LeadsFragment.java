@@ -15,10 +15,10 @@ import com.valyakinaleksey.amocrm.domain.LeadsAdapter;
 import com.valyakinaleksey.amocrm.domain.ServiceGenerator;
 import com.valyakinaleksey.amocrm.models.MyLead;
 import com.valyakinaleksey.amocrm.models.api.APIError;
+import com.valyakinaleksey.amocrm.models.api.AmoResponse;
 import com.valyakinaleksey.amocrm.models.api.Lead;
 import com.valyakinaleksey.amocrm.models.api.LeadsResponse;
 import com.valyakinaleksey.amocrm.models.api.LeadsStatusesResponse;
-import com.valyakinaleksey.amocrm.models.api.Response;
 import com.valyakinaleksey.amocrm.util.ErrorUtils;
 import com.valyakinaleksey.amocrm.util.LeadUtils;
 import com.valyakinaleksey.amocrm.util.Logger;
@@ -72,7 +72,10 @@ public class LeadsFragment extends Fragment {
             if (LeadUtils.isLeadStatusesEmpty()) {
                 initLeadsStatuses(service);
             } else {
-                initLeads(service);
+                Logger.d("saved state " + savedInstanceState);
+                if (leadList.isEmpty()) {
+                    initLeads(service);
+                }
             }
         } else {
             navigateToAuth();
@@ -80,10 +83,10 @@ public class LeadsFragment extends Fragment {
     }
 
     private void initLeads(ServiceGenerator.AmoCrmApiInterface service) {
-        Call<Response<LeadsResponse>> leadsResponse = service.getLeads();
-        leadsResponse.enqueue(new Callback<Response<LeadsResponse>>() {
+        Call<AmoResponse<LeadsResponse>> leadsResponse = service.getLeads();
+        leadsResponse.enqueue(new Callback<AmoResponse<LeadsResponse>>() {
             @Override
-            public void onResponse(Call<Response<LeadsResponse>> call, retrofit2.Response<Response<LeadsResponse>> response) {
+            public void onResponse(Call<AmoResponse<LeadsResponse>> call, retrofit2.Response<AmoResponse<LeadsResponse>> response) {
                 if (response.isSuccessful()) {
                     List<Lead> leads = response.body().response.leads;
                     leadList.clear();
@@ -105,7 +108,7 @@ public class LeadsFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<Response<LeadsResponse>> call, Throwable t) {
+            public void onFailure(Call<AmoResponse<LeadsResponse>> call, Throwable t) {
                 Logger.d(t.toString());
                 ToastUtils.showShortMessage("Check your internet connection", getContext());
             }
@@ -113,10 +116,10 @@ public class LeadsFragment extends Fragment {
     }
 
     private void initLeadsStatuses(final ServiceGenerator.AmoCrmApiInterface service) {
-        Call<Response<LeadsStatusesResponse>> leadsStatusesResponse = service.getLeadStatuses();
-        leadsStatusesResponse.enqueue(new Callback<Response<LeadsStatusesResponse>>() {
+        Call<AmoResponse<LeadsStatusesResponse>> leadsStatusesResponse = service.getLeadStatuses();
+        leadsStatusesResponse.enqueue(new Callback<AmoResponse<LeadsStatusesResponse>>() {
             @Override
-            public void onResponse(Call<Response<LeadsStatusesResponse>> call, retrofit2.Response<Response<LeadsStatusesResponse>> response) {
+            public void onResponse(Call<AmoResponse<LeadsStatusesResponse>> call, retrofit2.Response<AmoResponse<LeadsStatusesResponse>> response) {
                 if (response.isSuccessful()) {
                     LeadUtils.setLeadStatuses(response.body().response.account.leadStatuses);
                     initLeads(service);
@@ -130,7 +133,7 @@ public class LeadsFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<Response<LeadsStatusesResponse>> call, Throwable t) {
+            public void onFailure(Call<AmoResponse<LeadsStatusesResponse>> call, Throwable t) {
 
             }
         });
