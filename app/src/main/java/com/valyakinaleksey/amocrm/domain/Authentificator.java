@@ -1,11 +1,14 @@
 package com.valyakinaleksey.amocrm.domain;
 
+import com.valyakinaleksey.amocrm.models.api.APIError;
 import com.valyakinaleksey.amocrm.models.api.Account;
 import com.valyakinaleksey.amocrm.models.api.AmoResponse;
 import com.valyakinaleksey.amocrm.models.api.AuthResponse;
 import com.valyakinaleksey.amocrm.models.api.BaseCallback;
 import com.valyakinaleksey.amocrm.models.events.AccountAuthEvent;
+import com.valyakinaleksey.amocrm.models.events.ApiErrorEvent;
 import com.valyakinaleksey.amocrm.models.events.BaseAuthEvent;
+import com.valyakinaleksey.amocrm.util.ErrorUtils;
 import com.valyakinaleksey.amocrm.util.Logger;
 
 import org.greenrobot.eventbus.EventBus;
@@ -38,7 +41,14 @@ public class Authentificator {
                         Logger.d(response.toString());
                         super.onResponse(call, response);
                         if (response.isSuccessful()) {
-                            EventBus.getDefault().post(new BaseAuthEvent(response.body().response.accounts));
+                            if (response.body().response.auth) {
+                                EventBus.getDefault().post(new BaseAuthEvent(response.body().response.accounts));
+                            } else {
+                                APIError apiError = new APIError();
+                                apiError.error_code = ErrorUtils.ERROR_AUTH_LOGIN_PASSWORD;
+                                apiError.error = "Wrong Login or Password";
+                                EventBus.getDefault().post(new ApiErrorEvent(apiError));
+                            }
                         }
                     }
                 });

@@ -103,7 +103,7 @@ public class LoginFragment extends Fragment {
                 case ErrorUtils.ERROR_AUTH_CAPTCHA:
                     break;
             }
-            Logger.d(apiError.error);
+//            Logger.d(apiError.error);
             Logger.d(String.valueOf(apiError.error_code));
         }
     }
